@@ -27,10 +27,10 @@ local window = ui.Window:new {
           Legend = "Historical",
           Columns = 2,
           Children = {
-            Text:new { Class="caption", Text="24 hr"},    txtAircraft24hr,
-            Text:new { Class="caption", Text="7 day"},    txtAircraft7d,
-            Text:new { Class="caption", Text="1 Mo"},     txtAircraftMo,
-            Text:new { Class="caption", Text="All Time"}, txtAircraftAll
+            Text:new { Class="caption", Text="Day"},    txtAircraft24hr,
+            Text:new { Class="caption", Text="Wk"},    txtAircraft7d,
+            Text:new { Class="caption", Text="Mo"},     txtAircraftMo,
+            Text:new { Class="caption", Text="All"}, txtAircraftAll
           }
         }
       }
