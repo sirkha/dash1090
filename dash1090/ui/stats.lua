@@ -1,6 +1,8 @@
-#!/usr/bin/env lua
+-- dash1090                                                                  --
+-- Copyright (C) 2015 John C Kha                                             --
 
 local ui = require "tek.ui"
+
 local Group = ui.Group
 local Text = ui.Text
 
@@ -28,9 +30,9 @@ local window = ui.Window:new {
           Columns = 2,
           Children = {
             Text:new { Class="caption", Text="Day"},    txtAircraft24hr,
-            Text:new { Class="caption", Text="Wk"},    txtAircraft7d,
+            Text:new { Class="caption", Text="Wk"},     txtAircraft7d,
             Text:new { Class="caption", Text="Mo"},     txtAircraftMo,
-            Text:new { Class="caption", Text="All"}, txtAircraftAll
+            Text:new { Class="caption", Text="All"},    txtAircraftAll
           }
         }
       }
@@ -38,8 +40,4 @@ local window = ui.Window:new {
   }
 }
 
-local app = ui.Application:new()
-ui.Application.connect(window)
-app:addMember(window)
-
-app:run()
+return window

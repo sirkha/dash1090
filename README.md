@@ -1,17 +1,22 @@
 dash1090
 ========
 
-A dashboard for displaying information about an ADS-B collector site on a local display.
+A dashboard for displaying information about an ADS-B collector site on a local
+display.
 
 Dependencies
 ------------
 
-dash1090 is written in lua and developed on the Raspberry Pi with an [Adafruit 2.2 inch PiTFT][1].
+dash1090 is written in lua and developed on the Raspberry Pi with an
+[Adafruit 2.2 inch PiTFT][1].
+
 It relies on 
-* [TekUI][2] to provide the user interface directly onto the framebuffer without the need
-to run X. For details on installing TekUI on the Raspberry Pi and displaying on the PiTFT, please see
-the [section](Using TekUI on the Raspberry Pi and Linux Framebuffer) below.
-* To control the backlight and receive input, it uses the [rpi-gpio][3] package.
+* [TekUI][2] to provide the user interface directly onto the framebuffer
+    without the need to run X. For details on installing TekUI on the Raspberry
+    Pi and displaying on the PiTFT, please seethe [section](Using TekUI on the
+    Raspberry Pi and Linux Framebuffer) below.
+* To control the backlight and receive input, it uses the [rpi-gpio][3]
+    package.
 * To monitor data, [luasocket][4] is used.
 * A [dump1090][5] variant serving SBS data on port 30003.
  
@@ -32,15 +37,30 @@ Operation
 ---------
 dash1090 can be run 
 
-* from the downloaded directory
-* from its installed location
-* using the init script
+* from the downloaded directory (bin/dash1090)
+* from its installed location (dash1090)
+* using the init script (/etc/init.d/dash1090 start)
 
+Usage:
+
+     dash1090 [-d DRIVER] [-S WxH] [-f FEEDER [FEEDER OPTIONS] [-f FEEDER ...] ]
+     dash1090 --list-feeders
+     dash1090 -f FEEDER -h
+     
+  Argument        |    | Description
+  :---------------|:--:|:-------------------------------------------------
+  --help          | -h | print help and exit
+  --display       | -d | Specify the display driver *TODO*
+  --size          | -S | window size in pixels formatted as WxH
+  --theme         | -T | specify the tekUI theme
+  --feeder        | -f | name of the feeder followed by feeder options
+  --list-feeders  | -F | list the available feeders and their descriptions
+    
 
 Programming Overview for Developers
 -----------------------------------
 bin/dash1090.lua executes the main elements of the program. It forks feeder processes that send messages
-back to the UI for display and input.
+back to the UI and controllers for display and input.
 
 Using TekUI on the Raspberry Pi and Linux Framebuffer
 -----------------------------------------------------
