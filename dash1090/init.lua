@@ -33,15 +33,33 @@ local Group = ui.Group
 local Text = ui.Text
 
 local window = require "dash1090.ui.stats"
+local tally = require "dash1090.tally"
+local exec = require "tek.lib.exec"
 
+tally:load()
 -- Application Messages
 
 -- * QUIT: Exits the Program
 -- * MSG: An undecoded basestation (SBS1) formatted message
 -- * 
 
-local app = ui.Application:new()
-ui.Application.connect(window)
-app:addMember(window)
+
+
+local setup = function(self)
+    ui.Application.setup(self)
+    io.write( "app: " .. exec.getname() .. "\n")
+    self:addInputHandler(ui.MSG_USER, tally, tally.process)
+end
+
+local cleanup = function(self)
+    ui.Application.cleanup(self)
+    self:remInputHandler(ui.MSG_USER, tally, tally.process)
+end
+
+local app = ui.Application:new{ setup = setup, cleanup = cleanup}
+
+app.tally = tally
+
+window(ui, app)
 
 return app

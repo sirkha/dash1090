@@ -44,8 +44,19 @@ Usage:
 ]]
 
 local dash = require "dash1090"
+local exec = require "tek.lib.exec"
+
+local feeder_dump1090 = require "dash1090.feeder.dump1090"
+
+io.write("Main: " .. exec.getname() .. "\n")
+
+local c = exec.run(feeder_dump1090.run, feeder_dump1090)
 
 
-
+-- Argument parsing
+-- Everything after the first -f relates is either a feeder or a feeder option
+local feeders = ""
 
 dash:run()
+
+c:terminate()
