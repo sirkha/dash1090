@@ -43,6 +43,11 @@ Usage:
     --list-feeders    -F  list the available feeders and their descriptions
 ]]
 
+-- Allow the program to be run by executing this file from the top directory
+-- or bin directory (bin/dash1090 or dash1090)
+package.path = "./?/init.lua;../?/init.lua" .. package.path
+package.cpath = "./lib/?.so;../lib/?.so" ..package.cpath
+
 local dash = require "dash1090"
 local exec = require "tek.lib.exec"
 
