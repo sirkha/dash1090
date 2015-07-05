@@ -35,25 +35,32 @@ local Text = ui.Text
 local window = require "dash1090.ui.stats"
 local tally = require "dash1090.tally"
 local exec = require "tek.lib.exec"
+local _d = require "tek.lib.debug"
 
-tally:load()
+
 -- Application Messages
 
 -- * QUIT: Exits the Program
 -- * MSG: An undecoded basestation (SBS1) formatted message
 -- * 
 
-
+function handleSignals(self)
+    _d.info("Main task signals: " .. (exec.getsignals() or "No Signals"))
+end
 
 local setup = function(self)
     ui.Application.setup(self)
-    io.write( "app: " .. exec.getname() .. "\n")
+    tally:load()
     self:addInputHandler(ui.MSG_USER, tally, tally.process)
+    self:addInputHandler(ui.MSG_SIGNAL, self, handleSignals)
 end
 
 local cleanup = function(self)
+    _d.trace("Cleanup")
     ui.Application.cleanup(self)
     self:remInputHandler(ui.MSG_USER, tally, tally.process)
+    tally:unload()
+    self:remInputHandler(ui.MSG_SIGNAL, self, handleAbort)
 end
 
 local app = ui.Application:new{ setup = setup, cleanup = cleanup}

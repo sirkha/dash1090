@@ -46,16 +46,17 @@ Usage:
 -- Allow the program to be run by executing this file from the top directory
 -- or bin directory (bin/dash1090 or dash1090)
 package.path = "./?/init.lua;../?/init.lua" .. package.path
-package.cpath = "./lib/?.so;../lib/?.so" ..package.cpath
+package.cpath = "./lib/?.so;../lib/?.so" .. package.cpath
+
+local _d = require "tek.lib.debug"
+_d.level = _d.WARN
 
 local dash = require "dash1090"
 local exec = require "tek.lib.exec"
 
 local feeder_dump1090 = require "dash1090.feeder.dump1090"
 
-io.write("Main: " .. exec.getname() .. "\n")
-
-local c = exec.run(feeder_dump1090.run, feeder_dump1090)
+local c = exec.run(feeder_dump1090.run, feeder_dump1090.name)
 
 
 -- Argument parsing

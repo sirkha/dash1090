@@ -6,23 +6,22 @@ local ui = require "tek.ui"
 local Group = ui.Group
 local Text = ui.Text
 
-local Stat = ui.Text:newClass { _NAME = "stat"}
+local Stat = ui.Text:newClass { _NAME = "_statistic"}
 
 function Stat:init() 
   self.Class = "statistic"
   self.Mode = self.Mode or "statistic"
-  self.KeyCode = true
   return ui.Text.init(self)
 end
 
 function Stat:show()
+    if self.Stat then self.Stat:subscribe(tostring(self), self, "Text") end
     Text.show(self)
-    if self.Stat then self.Stat:subscribe(self.Id, self, "Text") end
 end
 
 function Stat:hide()
     Text.hide(self)
-    if self.Stat then self.Stat:unsubscribe(self.Id) end
+    if self.Stat then self.Stat:unsubscribe(tostring(self)) end
 end
 
 
@@ -30,12 +29,15 @@ local Window = function (pui, app)
 
     local txtAircraftCurrent = Stat:new {
         Text = "##",
-        Stat = app.tally.session_msgs
+        Stat = app.tally.min_msgs
     }
     local txtAircraft24hr = Text:new { Text = "##", Tally = app.tally }
     local txtAircraft7d = Text:new { Text = "##", Tally = app.tally }
     local txtAircraftMo = Text:new { Text = "##", Tally = app.tally }
-    local txtAircraftAll = Text:new { Text = "##", Tally = app.tally }
+    local txtAircraftAll = Stat:new { 
+        Text = "##",
+        Stat = app.tally.session_msgs
+    }
 
     local window = ui.Window:new {
       Orientation = "vertical",
