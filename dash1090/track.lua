@@ -1,56 +1,62 @@
 -- dash1090                                                                  --
 -- Copyright (C) 2015 John C Kha                                             --
 
--- This file keeps tallies derived from either messages or subscriptions.
+-- This file listens for messages keeps a list of aircraft currently being
+-- tracked
 
 local _d = require "tek.lib.debug"
 local exec = require "tek.lib.exec"
 
-
-
 -------------------------------------------------------------------------------
--- Class implementation in Lua
---
+-- OVERVIEW:
+--  A
 -------------------------------------------------------------------------------
-local Tally = {}
+local AircraftTracker = {}
 
 -------------------------------------------------------------------------------
+--  aircraftTracker = new(period): Returns a new aircraft tracker object that
+--   will track aircraft for the period specified (in seconds)
 -------------------------------------------------------------------------------
-function Tally:new(period)
-    -- Create a table object and set-up parameters
+function AircraftTracker:new(period)
     obj = {
         last = 0,
         first = 1,
-        period = period or "none",
         subscribers = {}
     }
-    -- Look in the parent class for metamethods
+    obj.period = period or "none"
     setmetatable(obj, self)
-    -- obj[key] will return Tally[key] if not an index. This means methods of
-    -- obj refer to the parent class.
     self.__index = self
     return obj
 end
 
 -------------------------------------------------------------------------------
+--  subscribe(key, field, value, datum): Registers for updates to aircraft
+--   data. The datum will be assigned to the value of field. Key is a unique
+--   tracker for the subscription.
 -------------------------------------------------------------------------------
-function Tally:subscribe(key, field, value) 
+function AircraftTracker:subscribe(key, field, value, datum) 
     value = value or "Text"
     _d.info(key .. " subscribed to " .. self.name)
-    self.subscribers[key] = {field = field, value = value}
-    return 0
+    self.subscribers[key] = {
+        field = field,
+        value = value,
+        datum = datum
+    }
 end
 
 -------------------------------------------------------------------------------
+-- unsubscribe(key): Removes field from subscription list.
 -------------------------------------------------------------------------------
-function Tally:unsubscribe(key)
+function AircraftTracker:unsubscribe(key)
     _d.info(key .. " unsubscribed from " .. self.name)
     self.subscribers[key] = nil
 end
 
 -------------------------------------------------------------------------------
+-- num = add(): Add an aircraft to be tracked. Returns the number of aircraft
+--  being tracked.
 -------------------------------------------------------------------------------
-function Tally:add()
+function AircraftTracker:add()
     _df = self.name .. " %s %q"
     self.last = self.last + 1
     if self.period ~= "none" then
@@ -73,8 +79,11 @@ function Tally:add()
 end
 
 -------------------------------------------------------------------------------
+-- num = remove(icao): Remove an aircraft from the tracker. If no icao address
+--  is given, remove the oldest aircraft. Returns the number of tracked
+--  aircraft.
 -------------------------------------------------------------------------------
-function Tally:subtract()
+function AircraftTracker:remove(icao)
     _df = self.name .. " %s %q" 
     if self.period ~= "none" then
         _d.info(_df:format("time", self[self.first]))
@@ -107,8 +116,9 @@ function Tally:subtract()
 end
 
 -------------------------------------------------------------------------------
+-- num = update(datum): Update subscriber fields.
 -------------------------------------------------------------------------------
-function Tally:update() 
+function AircraftTracker:update() 
     for k, subscriber in pairs(self.subscribers) do
         local newval = tostring(self.last - self.first + 1)
         _d.info(self.name .. " updating " .. k .. " to " .. newval)
@@ -118,10 +128,8 @@ function Tally:update()
 end
 
 -------------------------------------------------------------------------------
--- msg_next(): Run as a sub process to act as a simple chron daemon, removing
---  items from the tally when they have expired.
 -------------------------------------------------------------------------------
-function Tally.msg_next()
+function AircraftTracker.msg_next()
     local exec = require "tek.lib.exec"
     local _d = require "tek.lib.debug"
     _d.level = tonumber(arg[3])
@@ -135,10 +143,8 @@ function Tally.msg_next()
     local time = arg[2]
     
     if exec.waittime((time-os.time())*1000, "t") then
-        _d.warn("Timer task terminated with " .. 
-                    time - os.time() .. "s remaining.")
-        return "Timer task terminated with " ..
-                    time - os.time() .. "s remaining."
+        _d.warn("Timer task terminated with " .. time - os.time() .. "s remaining.")
+        return "Timer task terminated with " .. time - os.time() .. "s remaining."
     else
         local res = exec.sendport("*p","ui","TALLY,-,"..name)
         exec.wait("t")
@@ -148,82 +154,12 @@ function Tally.msg_next()
 end
 
 -------------------------------------------------------------------------------
--- Special table that tells its members their key.
 -------------------------------------------------------------------------------
-local TallySet = {}
-
--------------------------------------------------------------------------------
--- Create a tally set
--------------------------------------------------------------------------------
-function TallySet:new()
-    obj = {}
-    setmetatable(obj, self)
-    self.__index = self
-    return obj
-end
-
--------------------------------------------------------------------------------
--- Let the object know its key in the set.
--------------------------------------------------------------------------------
-function TallySet.__newindex(table, index, value)
-    _d.trace("Creating Tally index " .. index)
-    value.name = index
-    rawset(table, index, value)
-end
+local Track = {}
 
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-local Tallies = {}
-
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
-function Tallies:load(tallyfile)
-    -- put all tallies in a table for easy storage
-    
-    self.tallies = TallySet:new()
-    self.session_tallies = TallySet:new()
-    -- if someone wants to use a tally, allow tallies.tally instead of 
-    -- tallies.tallies.tally or tally.session_tallies.tally
-    mtab = { 
-        __index = function(_, key)
-            return self.tallies[key] or self.session_tallies[key]
-        end
-    }
-    setmetatable(self, mtab)
-    if tallyfile then
-    end
-    
-    tallies = self.tallies
-    session_tallies = self.session_tallies
-    
-    -- if tally file does not contain any tallies that we need, define them.
-    tallies.day_aircraft = tallies.day_aircraft or Tally:new(24*60*60)
-    tallies.wk_aircraft = tallies.wk_aircraft or Tally:new(7*24*60*60)
-    tallies.mo_aircraft = tallies.mo_aircraft or Tally:new(30*24*60*60)
-    tallies.all_aircraft = tallies.all_aircraft or Tally:new()
-    
-    session_tallies.session_msgs = Tally:new()
-    session_tallies.min_msgs = Tally:new(60)
-    
-    return self
-end
-
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
-function Tallies:unload(tallyfile)
-    --TODO Save tallies to file
-    for tally in tallies do
-        _d.trace("Cleaning up " ..tally.name)
-        if tally.msg_next_task then tally.msg_next_task:terminate() end
-    end
-    for tally in session_tallies do
-        if tally.msg_next_task then tally.msg_next_task:terminate() end
-    end
-end
-
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
-function Tallies:process(msg) 
+function Track:Process()
     m = {}
     i = 1
     for k, v in string.gmatch(msg[-1] .. ",","([^,]*)(,)")  do
@@ -231,11 +167,5 @@ function Tallies:process(msg)
         m[i] = k
         i = i+1
     end
-    if string.find(msg[-1],"TALLY,-") then self[m[3]]:subtract() end
-    
-    self.session_msgs:add()
-    self.min_msgs:add()
     return msg
 end
-
-return Tallies
